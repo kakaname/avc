@@ -1,9 +1,9 @@
 use std::{env, process};
-use crate::command;
+use crate::initalize::initalize;
+use crate::help::print_help;
 
 
-
-pub fn parse_args() -> command::Command{
+pub fn parse_args() {
   let args: Vec<String> = env::args().collect();
 
   if args.len() < 2 {
@@ -11,8 +11,9 @@ pub fn parse_args() -> command::Command{
     process::exit(0);
   }
 
-  if args[1] == "init" {
-    return command::Command::initalize();
+  match args[1].as_str() {
+    "init" => initalize(),
+    _ => print_help(),
   }
 
   process::exit(0);

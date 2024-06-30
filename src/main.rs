@@ -1,10 +1,10 @@
 mod parse_args;
-mod command;
+mod initalize;
+mod help;
 
 
 fn main() {
     let output = parse_args::parse_args();
-    output.execute();
 
 
 }
