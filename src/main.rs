@@ -1,5 +1,6 @@
 mod parse_args;
 mod commands;
+mod macros;
 
 
 fn main() {
