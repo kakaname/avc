@@ -1,7 +1,5 @@
 use std::{env, process};
-use crate::initalize::initalize;
-use crate::help::print_help;
-
+use crate::commands::{initalize, status, delete_repo, print_help};
 
 pub fn parse_args() {
   let args: Vec<String> = env::args().collect();
@@ -13,6 +11,8 @@ pub fn parse_args() {
 
   match args[1].as_str() {
     "init" => initalize(),
+    "status" => status(),
+    "delete" => delete_repo(),
     _ => print_help(),
   }
 

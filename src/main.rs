@@ -1,6 +1,5 @@
 mod parse_args;
-mod initalize;
-mod help;
+mod commands;
 
 
 fn main() {
