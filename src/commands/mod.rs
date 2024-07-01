@@ -1,4 +1,5 @@
-use crate::macros::{create_directory, check_dir_exists};
+use crate::macros::{append_to_bin_file, check_dir_exists, check_file_exists, compute_sha1_hash, create_directory, create_file, diff_file};
+
 
 
 
@@ -14,6 +15,21 @@ pub fn status() {
 
 
 }
+
+
+pub fn begin_tracking(arg : &str) {
+  if !check_file_exists(arg) {
+    eprintln!("file does not exist");
+    std::process::exit(1);
+  }
+  let a  = compute_sha1_hash(arg);
+  match append_to_bin_file(arg, "./.avc/index") {
+    Ok(_) => (),
+    Err(e) => eprintln!("Error was found when beginning to track file: {}", e),
+  }
+
+}
+
 /// deletes the repository
 pub fn delete_repo() {
   match std::fs::remove_dir_all("./.avc") {
@@ -37,6 +53,7 @@ pub fn initalize() {
   create_directory("./.avc/name", "");
   create_directory("./.avc/message", "");
   create_directory("./.avc/hashes", "Succesfully created avc repository");
+  create_file("./.avc/index", "");
 
   
 

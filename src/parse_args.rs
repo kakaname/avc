@@ -1,11 +1,10 @@
 use std::{env, process};
-use crate::commands::{initalize, status, delete_repo, print_help};
+use crate::commands::{initalize, status, delete_repo, print_help, begin_tracking};
 
 pub fn parse_args() {
   let args: Vec<String> = env::args().collect();
 
   if args.len() < 2 {
-    println!("Usage : avc <argument>");
     process::exit(0);
   }
 
@@ -13,6 +12,13 @@ pub fn parse_args() {
     "init" => initalize(),
     "status" => status(),
     "delete" => delete_repo(),
+    "add" => {
+      if args.len() < 3 {
+        eprintln!("Correct Usage : avc add <file>");
+        process::exit(1);
+      }
+      begin_tracking(&args[2])
+    },
     _ => print_help(),
   }
 
