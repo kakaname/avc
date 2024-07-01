@@ -1,5 +1,5 @@
 use std::{env, process};
-use crate::commands::{initalize, status, delete_repo, print_help, begin_tracking};
+use crate::commands::{initalize, status, delete_repo, print_help, begin_tracking, list_targets};
 
 pub fn parse_args() {
   let args: Vec<String> = env::args().collect();
@@ -12,6 +12,7 @@ pub fn parse_args() {
     "init" => initalize(),
     "status" => status(),
     "delete" => delete_repo(),
+    "ls-targets" => list_targets(),
     "add" => {
       if args.len() < 3 {
         eprintln!("Correct Usage : avc add <file>");
