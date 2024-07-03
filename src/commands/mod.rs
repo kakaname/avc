@@ -26,25 +26,10 @@ pub fn status() {
 
 // begins tracking a file or updates a files hash
 pub fn begin_tracking(arg : &str) {
-  if !check_file_exists(arg) { raise_error("file does not exist or cannot be found") }
-  let hashed_file  = compute_sha1_hash(arg).unwrap();
-  let most_recent_hashmap_object = FileHashMap::get_from_file("./.avc/index.bin"); // uses a wrapper object around the hashmap for more functionality
-  let mut most_recent_hashmap = most_recent_hashmap_object.get_map().clone();
-
-  match most_recent_hashmap.entry(arg.to_string()) {
-    std::collections::hash_map::Entry::Occupied(mut entry) => {
-      if *entry.get() != hashed_file{
-        *entry.get_mut() = hashed_file;
-        let _ = replace_hashmap(most_recent_hashmap); // should do error propogation management here // update hashmap
-      }
-    },
-    std::collections::hash_map::Entry::Vacant(entry) => {
-      entry.insert(hashed_file); // update hashmap
-      let _ = replace_hashmap(most_recent_hashmap.clone());
-    }
-  }
-
-
+  check_file_exists(arg);
+  let mut hashmap = FileHashMap::get_from_file("./.avc/index.bin");
+  hashmap.update_file(arg);
+  let _ = hashmap.save_to_file("./.avc/index.bin");
 
 }
 
@@ -53,10 +38,7 @@ pub fn begin_tracking(arg : &str) {
 pub fn delete_repo() {
   match std::fs::remove_dir_all("./.avc") {
     Ok(_) => (),
-    Err(e) => {
-      eprintln!("error when deleting repository : {}", e);
-      std::process::exit(1);
-    },
+    Err(e) => raise_error("error when deleting repository"),
   }
 
 }

@@ -6,27 +6,13 @@ use std::io::{self, BufReader, BufWriter, Write, Read};
 use std::io::prelude::*;
 
 use crate::error::raise_error;
+use crate::macros::compute_sha1_hash;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct FileHashMap {
   map : HashMap<String, String>
 }
 impl FileHashMap{
-  pub fn save(self) -> io::Result<()>{
-    let file_path = "hashmap.bin";
-    match std::fs::remove_file(file_path) { // remove previous versions of the file
-      Ok(_) => (),
-      Err(_) => raise_error("Error when removing previous version of file"),
-    }
-
-    let file = File::create(file_path)?;
-    let mut writer = BufWriter::new(file);
-    self.serialize(&mut Serializer::new(&mut writer)).unwrap();
-    writer.flush()?;
-
-    Ok(())
-  }
-
   pub fn set_map(&mut self, new_map : HashMap<String, String>) {
     self.map = new_map
   }
@@ -70,6 +56,32 @@ impl FileHashMap{
       raise_error("Error opening file");
     }
 
+  }
+
+  pub fn save_to_file(&self, file_path : &str) -> Result<(), std::io::Error>{
+    if let Ok(serialized_data) = rmp_serde::to_vec(&self) { // matches for error from rmp_serde
+      let mut file = File::create(file_path)?;
+      file.write_all(&serialized_data)?;
+
+    }else {
+      raise_error("failed to serialize data when replacing hashmap");
+    }
+    Ok(())
+  }
+
+  pub fn update_file(&mut self, file_path : &str) {
+    let hashed_file  = compute_sha1_hash(file_path).unwrap();
+
+    match self.map.entry(file_path.to_string()) {
+      std::collections::hash_map::Entry::Occupied(mut entry) => {
+        if *entry.get() != hashed_file{
+          *entry.get_mut() = hashed_file;
+        }
+      },
+      std::collections::hash_map::Entry::Vacant(entry) => {
+        entry.insert(hashed_file); // update hashmap
+      }
+    }
   }
 
 

@@ -69,11 +69,11 @@ pub fn create_directory(path: &str, success_message: &str) {
   }
 }
 
-/// replaces current hashmap version with new hashmap
-pub fn replace_hashmap(hashmap : HashMap<String, String>) -> Result<(), std::io::Error> {
+/// replaces existing current FileHashMap version with new version
+pub fn replace_hashmap(file_path: &str, hashmap : HashMap<String, String>) -> Result<(), std::io::Error> {
   let map_to_save = FileHashMap::get_from_hashmap(hashmap);
   if let Ok(serialized_data) = rmp_serde::to_vec(&map_to_save) { // matches for error from rmp_serde
-    let mut file = File::create("./.avc/index.bin")?;
+    let mut file = File::create(file_path)?;
     file.write_all(&serialized_data)?;
 
   }else {
