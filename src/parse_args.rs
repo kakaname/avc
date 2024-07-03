@@ -1,5 +1,5 @@
 use std::{env, process};
-use crate::commands::{initalize, status, delete_repo, print_help, begin_tracking, list_targets};
+use crate::{commands::{begin_tracking, delete_repo, initalize, list_targets, print_help, status}, error::raise_error};
 
 pub fn parse_args() {
   let args: Vec<String> = env::args().collect();
@@ -14,12 +14,9 @@ pub fn parse_args() {
     "delete" => delete_repo(),
     "ls-targets" => list_targets(),
     "add" => {
-      if args.len() < 3 {
-        eprintln!("Correct Usage : avc add <file>");
-        process::exit(1);
-      }
+      if args.len() < 3 { raise_error("Correct Usage : avc add <file>") }
       begin_tracking(&args[2])
-    },
+      },
     _ => print_help(),
   }
 

@@ -1,6 +1,8 @@
 mod parse_args;
 mod commands;
 mod macros;
+mod hashmap;
+mod error;
 
 
 fn main() {

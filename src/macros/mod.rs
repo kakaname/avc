@@ -2,6 +2,10 @@ use std::fs;
 use std::io::{self, Read, BufWriter, BufReader, Write};
 use std::fs::File;
 use sha1::{Sha1, Digest};
+use crate::error::raise_error;
+use crate::hashmap::FileHashMap;
+use std::collections::HashMap;
+
 
 /// computes a sha1 hash from a file of choice
 pub fn compute_sha1_hash(file_path: &str) -> io::Result<String> {
@@ -127,4 +131,19 @@ pub fn create_directory(path: &str, success_message: &str) {
           std::process::exit(1);
       }
   }
+}
+
+/// replaces current hashmap version with new hashmap
+pub fn replace_hashmap(hashmap : HashMap<String, String>) -> Result<(), std::io::Error> {
+  let map_to_save = FileHashMap::get_from_hashmap(hashmap);
+  if let Ok(serialized_data) = rmp_serde::to_vec(&map_to_save) { // matches for error from rmp_serde
+    let mut file = File::create("./.avc/index.bin")?;
+    file.write_all(&serialized_data)?;
+
+  }else {
+    raise_error("failed to serialize data when replacing hashmap");
+  }
+
+  Ok(())
+  
 }

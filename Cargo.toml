@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 sha1 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+rmp-serde = "1.0"
