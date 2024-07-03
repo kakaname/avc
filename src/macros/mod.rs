@@ -24,77 +24,13 @@ pub fn compute_sha1_hash(file_path: &str) -> io::Result<String> {
   let hash = hasher.finalize();
   Ok(format!("{:x}", hash))
 }
+
 /// check if file exists
 pub fn check_file_exists(arg : &str) -> bool {
   match fs::metadata(arg) {
     Ok(_) => return true,
-    Err(_) => {
-      eprintln!("file {} does not exist or cannot be found", arg);
-      return false;
-    },
+    Err(_) => raise_error("file does not exist or cannot be found"),
   }
-}
-
-/// check if a file is being tracked by checking ./avc/index
-pub fn check_file_tracked(arg : &str) -> bool {
-  let output: Vec<String> = read_from_bin_file("./.avc/index").unwrap();
-  if output.contains(&String::from(arg)) {
-    return true;
-  }
-  return false
-}
-
-/// reads filenames from a binary file
-pub fn read_from_bin_file(arg : &str) -> io::Result<Vec<String>> {
-  let file = File::open(arg)?;
-  let mut reader = BufReader::new(file);
-  let mut filenames = Vec::new();
-
-  loop {
-      let mut length_buf = [0; 4];
-      if reader.read_exact(&mut length_buf).is_err() {
-          break;
-      }
-      let length = u32::from_le_bytes(length_buf) as usize;
-
-      let mut filename_buf = vec![0; length];
-      reader.read_exact(&mut filename_buf)?;
-
-      let filename = String::from_utf8(filename_buf).expect("Invalid UTF-8 sequence");
-      filenames.push(filename);
-  }
-  Ok(filenames)
-}
-
-
-/// writes to a binary file
-pub fn append_to_bin_file(filename: &str, file_path: &str) -> io::Result<()> {
-  let file = fs::OpenOptions::new().append(true).create(true).open(file_path)?;
-  let mut writer = BufWriter::new(file);
-
-  let length = filename.len() as u32;
-  writer.write_all(&length.to_le_bytes())?;
-  writer.write_all(filename.as_bytes())?;
-
-  Ok(())
-}
-
-/// adds a file to be tracked
-pub fn add_file_tracked(arg : &str) {
-  check_file_tracked(arg);
-  match append_to_bin_file(arg, "./.avc/index") {
-    Ok(_) => (),
-    Err(e) => {
-      eprintln!("error when writing to file: {}", e);
-      std::process::exit(1);
-    },
-  }
-
-}
-
-pub fn diff_file(arg : &str, a : io::Result<String>) {
-  check_file_tracked(arg);
-
 }
 
 
@@ -146,4 +82,52 @@ pub fn replace_hashmap(hashmap : HashMap<String, String>) -> Result<(), std::io:
 
   Ok(())
   
+}
+
+
+#[cfg(test)]
+mod test_macros {
+
+  use super::*;
+
+  #[test]
+  pub fn test_sha_computation() {
+    let file_path_1 = "./debug/file_1.txt";
+    let file_path_2 = "./debug/file_2.txt";
+    let mut f1 = File::create(file_path_1);
+    let mut f2 = File::create(file_path_2);
+
+    let hash_1 = compute_sha1_hash(&file_path_1).unwrap();
+    let hash_2 = compute_sha1_hash(&file_path_2).unwrap();
+
+    assert_eq!(hash_1, hash_2); // two hashes of different files with same content should be the same
+
+    let _ = f2.unwrap().write_all(b"hello world");
+
+    let hash_1 = compute_sha1_hash(&file_path_1).unwrap();
+    let hash_2 = compute_sha1_hash(&file_path_2).unwrap();
+
+    assert_ne!(hash_1, hash_2); // two hashes of different files with different content should be the different
+
+    let hash_1 = compute_sha1_hash(&file_path_1).unwrap();
+    let hash_2 = compute_sha1_hash(&file_path_1).unwrap();
+
+    assert_eq!(hash_1, hash_2); // two hashes at different times of a single file should be equivalent
+
+    // clean up after file creation
+    let _ = std::fs::remove_file(file_path_1);
+    let _ = std::fs::remove_file(file_path_2);
+
+  }
+
+  #[test]
+  pub fn test_check_file() { 
+    let file_path_1 = "./debug/file_1.txt";
+    let mut f1 = File::create(file_path_1);
+    assert!(check_file_exists(&file_path_1));
+
+  }
+
+
+
 }
