@@ -1,5 +1,7 @@
 use std::fs;
 use std::io::{self, Read, BufWriter, BufReader, Write};
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use std::fs::File;
 use sha1::{Sha1, Digest};
 use crate::error::raise_error;
@@ -55,6 +57,7 @@ pub fn check_dir_exists(path : &str) {
   }
 }
 
+/// creates a directory
 pub fn create_directory(path: &str, success_message: &str) {
   match fs::create_dir_all(path) {
       Ok(_) => {
@@ -69,21 +72,29 @@ pub fn create_directory(path: &str, success_message: &str) {
   }
 }
 
-/// replaces existing current FileHashMap version with new version
-pub fn replace_hashmap(file_path: &str, hashmap : HashMap<String, String>) -> Result<(), std::io::Error> {
-  let map_to_save = FileHashMap::get_from_hashmap(hashmap);
-  if let Ok(serialized_data) = rmp_serde::to_vec(&map_to_save) { // matches for error from rmp_serde
-    let mut file = File::create(file_path)?;
-    file.write_all(&serialized_data)?;
+/// compresses a file
+pub fn compress_file(input_file : &str, output_file : &str) -> Result<(), std::io::Error> {
+  // Open the input file for reading
+  let input_file = File::open(input_file)?;
+  let reader = BufReader::new(input_file);
 
-  }else {
-    raise_error("failed to serialize data when replacing hashmap");
-  }
+  // Open the output file for writing
+  let output_file = File::create(output_file)?;
+  let writer = BufWriter::new(output_file);
+
+  // Create a GzEncoder to compress the data
+  let mut encoder = GzEncoder::new(writer, Compression::default());
+
+  // Copy the data from the reader to the encoder
+  std::io::copy(&mut reader.take(u64::MAX), &mut encoder)?;
+
+  // Finish the encoding process to flush the output
+  encoder.finish()?;
 
   Ok(())
-  
-}
 
+
+}
 
 #[cfg(test)]
 mod test_macros {

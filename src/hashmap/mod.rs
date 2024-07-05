@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::Hash;
 use serde::{Serialize, Deserialize};
 use rmp_serde::{Serializer, Deserializer};
 use std::fs::{File};
@@ -28,12 +29,6 @@ impl FileHashMap{
     }
   }
 
-  // creates FileHashMap from hashmap
-  pub fn get_from_hashmap(map : HashMap<String, String>) -> Self {
-    Self {
-      map,
-    }
-  }
   // gets FileHashMap from File
   pub fn get_from_file(file_path : &str) -> Self {
     // Read the MessagePack data from the file and deserialize it back to a MyHashMap struct

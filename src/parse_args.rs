@@ -14,7 +14,7 @@ pub fn parse_args() {
     "delete" => delete_repo(),
     "add" => {
       if args.len() < 3 { raise_error("Correct Usage : avc add <file>") }
-      begin_tracking(&args[2])
+      begin_tracking(&args[2]);
       },
     _ => print_help(),
   }

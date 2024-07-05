@@ -1,8 +1,6 @@
 use std::{collections::HashMap, fs::File};
 
-use crate::{error::raise_error, macros::{check_dir_exists, check_file_exists, 
-            compute_sha1_hash, create_directory, create_file,
-            replace_hashmap}};
+use crate::{error::raise_error, macros::{check_dir_exists, check_file_exists, compress_file, compute_sha1_hash, create_directory, create_file}};
 use crate::hashmap::FileHashMap;
 
 
@@ -31,6 +29,7 @@ pub fn begin_tracking(arg : &str) {
   hashmap.update_file(arg);
   let _ = hashmap.save_to_file("./.avc/index.bin");
 
+  // we should change this to work as a commit instead
 }
 
 
@@ -43,19 +42,16 @@ pub fn delete_repo() {
 
 }
 
-
 /// initalize a repository
 pub fn initalize() {
   // Err should immdeiately exit
   check_dir_exists("./.avc");
   create_directory("./.avc", "");
-  create_directory("./.avc/blob", "");
+  create_directory("./.avc/files", "");
+  create_directory("./.avc/files/blob", "");
+  create_directory("./.avc/files/message", "");
+  create_directory("./.avc/temp", "");
   create_directory("./.avc/tag", "");
-  create_directory("./.avc/name", "");
-  create_directory("./.avc/message", "");
-  create_directory("./.avc/hashes", "Succesfully created avc repository");
-  create_file("./.avc/index.bin", "");
-
-  
+  create_file("./.avc/index.bin", "Succesfully created avc repository");
 
 }
