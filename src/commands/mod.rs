@@ -32,6 +32,10 @@ pub fn begin_tracking(arg : &str) {
   // we should change this to work as a commit instead
 }
 
+pub fn add_file() {
+
+}
+
 
 /// deletes the repository
 pub fn delete_repo() {
