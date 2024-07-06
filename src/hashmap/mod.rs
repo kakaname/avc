@@ -64,7 +64,7 @@ impl FileHashMap{
     Ok(())
   }
 
-  pub fn update_file(&mut self, file_path : &str) {
+  pub fn update_hashmap(&mut self, file_path : &str) {
     let hashed_file  = compute_sha1_hash(file_path).unwrap();
 
     match self.map.entry(file_path.to_string()) {

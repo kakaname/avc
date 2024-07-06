@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fs::File};
 
-use crate::{error::raise_error, macros::{check_dir_exists, check_file_exists, compress_file, compute_sha1_hash, create_directory, create_file}};
+use crate::{error::raise_error, macros::{check_dir_exists, check_file_exists, create_directory, create_file}};
 use crate::hashmap::FileHashMap;
 
 
@@ -23,17 +23,14 @@ pub fn status() {
 }
 
 // begins tracking a file or updates a files hash
-pub fn begin_tracking(arg : &str) {
-  check_file_exists(arg);
+pub fn begin_tracking(files : Vec<String>) {
   let mut hashmap = FileHashMap::get_from_file("./.avc/index.bin");
-  hashmap.update_file(arg);
+  for file in files{
+    check_file_exists(&file);
+    hashmap.update_hashmap(&file);
+  }
+
   let _ = hashmap.save_to_file("./.avc/index.bin");
-
-  // we should change this to work as a commit instead
-}
-
-pub fn add_file() {
-
 }
 
 
