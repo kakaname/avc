@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
 
-use crate::commands::{begin_tracking, delete_repo, initalize, status};
+use crate::commands::{begin_tracking, delete_repo, initalize, status, commit};
 
 #[derive(Debug, Parser)]
 #[command(name="avc")]
@@ -49,7 +49,14 @@ pub fn parse_args() {
       status();
     },
     Commands::Commit { message } => {
-      //commit(str_paths);
+      match message {
+        Some(s) => {
+          commit(s);
+        },
+        None => {
+          println!("must provide a message"); // placeholder for more concise error handling
+        }
+      }
     },
   }
 }

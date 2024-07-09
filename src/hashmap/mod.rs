@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 use rmp_serde::{Serializer, Deserializer};
 use std::fs::{File};
 use std::io::{self, BufReader, BufWriter, Write, Read};
-use std::io::prelude::*;
+use std::path::Path;
 
 use crate::error::raise_error;
 use crate::macros::compute_sha1_hash;

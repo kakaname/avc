@@ -25,14 +25,24 @@ pub fn status() {
 // begins tracking a file or updates a files hash
 pub fn begin_tracking(files : Vec<String>) {
   let mut hashmap = FileHashMap::get_from_file("./.avc/index.bin");
-  for file in files{
+  for file in files {
     check_file_exists(&file);
     hashmap.update_hashmap(&file);
+
   }
 
   let _ = hashmap.save_to_file("./.avc/index.bin");
 }
 
+pub fn commit(message : String) {
+  // message + file-blobs => hash
+  // message -> bin
+  // performance stats 
+
+  
+  
+
+}
 
 /// deletes the repository
 pub fn delete_repo() {
@@ -48,11 +58,19 @@ pub fn initalize() {
   // Err should immdeiately exit
   check_dir_exists("./.avc");
   create_directory("./.avc", "");
-  create_directory("./.avc/files", "");
-  create_directory("./.avc/files/blob", "");
-  create_directory("./.avc/files/message", "");
+  create_directory("./.avc/commits", "");
   create_directory("./.avc/temp", "");
   create_directory("./.avc/tag", "");
   create_file("./.avc/index.bin", "Succesfully created avc repository");
+
+}
+
+
+#[cfg(test)]
+mod test_commands {
+  use super::*;
+
+  
+
 
 }

@@ -1,3 +1,4 @@
+use std::fmt::format;
 use std::fs;
 use std::io::{self, Read, BufWriter, BufReader, Write};
 use flate2::write::GzEncoder;
@@ -5,34 +6,67 @@ use flate2::Compression;
 use std::fs::File;
 use sha1::{Sha1, Digest};
 use crate::error::raise_error;
-use crate::hashmap::FileHashMap;
-use std::collections::HashMap;
+use std::path::Path;
+use walkdir::WalkDir;
 
 
-/// computes a sha1 hash from a file of choice
+/// computes a sha1 hash from multiple files of choice
 pub fn compute_sha1_hash(file_path: &str) -> io::Result<String> {
-  let mut file = File::open(file_path)?;
   let mut hasher = Sha1::new();
-  let mut buffer = [0; 1024];
+  let mut file = File::open(file_path)?;
+  let mut buffer = [0u8; 1024];
 
   loop {
-      let bytes_read = file.read(&mut buffer)?;
-      if bytes_read == 0 {
-          break;
-      }
-      hasher.update(&buffer[..bytes_read]);
+    let n = file.read(&mut buffer)?;
+
+    if n == 0 {
+      break;
+    }
+    
+    hasher.update(&buffer[..n]);
   }
 
-  let hash = hasher.finalize();
-  Ok(format!("{:x}", hash))
+  let result = hasher.finalize();
+  
+  Ok(format!("{:?}", result))
+}
+
+pub fn sha1_hash_dir(directory : &str) -> io::Result<String> {
+  let mut hasher = Sha1::new();
+  let path = Path::new(directory);
+
+  for entry in WalkDir::new(path) {
+    let entry = entry?;
+    if entry.file_type().is_file() {
+      let file_path = entry.path();
+      let mut file = File::open(file_path)?;
+
+      let mut buffer = [0u8; 1024];
+      loop {
+        let n = file.read(&mut buffer)?;
+
+        if n == 0 {
+          break;
+        }
+
+        hasher.update(&buffer[..n]);
+      }
+    }
+
+  }
+
+  let result: String = format!("{:?}", hasher.finalize());
+  Ok(result)
+
 }
 
 /// check if file exists
-pub fn check_file_exists(arg : &str) -> bool {
-  match fs::metadata(arg) {
-    Ok(_) => return true,
+pub fn check_file_exists(file : &str) -> bool {
+  match fs::metadata(file) {
+    Ok(_) => (),
     Err(_) => raise_error("file does not exist or cannot be found"),
   }
+  return true;
 }
 
 
@@ -105,6 +139,7 @@ mod test_macros {
   pub fn test_sha_computation() {
     let file_path_1 = "./debug/file_1.txt";
     let file_path_2 = "./debug/file_2.txt";
+
     let mut f1 = File::create(file_path_1);
     let mut f2 = File::create(file_path_2);
 
