@@ -1,13 +1,15 @@
 use std::fmt::format;
 use std::fs;
 use std::io::{self, Read, BufWriter, BufReader, Write};
-use flate2::write::GzEncoder;
+use tar::{Builder, Archive};
+use flate2::write::{GzEncoder, GzDecoder};
 use flate2::Compression;
 use std::fs::File;
 use sha1::{Sha1, Digest};
 use crate::error::raise_error;
 use std::path::Path;
 use walkdir::WalkDir;
+use hex::encode;
 
 
 /// computes a sha1 hash from multiple files of choice
@@ -27,38 +29,24 @@ pub fn compute_sha1_hash(file_path: &str) -> io::Result<String> {
   }
 
   let result = hasher.finalize();
-  
-  Ok(format!("{:?}", result))
+  Ok(hex::encode(result))
 }
 
-pub fn sha1_hash_dir(directory : &str) -> io::Result<String> {
-  let mut hasher = Sha1::new();
-  let path = Path::new(directory);
+/// saves the temporary state of the file
+pub fn save_temp_file_state(file_path : &str, file_hash : String) {
+   let destination_path = format!("{}{}", "./.avc/tmp/", file_path);
+   let new_path = format!("{}{}", "./", file_path);
+   match fs::copy(new_path.clone(), destination_path) {
+    Ok(arg) => {
 
-  for entry in WalkDir::new(path) {
-    let entry = entry?;
-    if entry.file_type().is_file() {
-      let file_path = entry.path();
-      let mut file = File::open(file_path)?;
-
-      let mut buffer = [0u8; 1024];
-      loop {
-        let n = file.read(&mut buffer)?;
-
-        if n == 0 {
-          break;
-        }
-
-        hasher.update(&buffer[..n]);
-      }
+    },
+    Err(e) => {
+      eprintln!("{} ", e);
     }
-
-  }
-
-  let result: String = format!("{:?}", hasher.finalize());
-  Ok(result)
+   }
 
 }
+
 
 /// check if file exists
 pub fn check_file_exists(file : &str) -> bool {
@@ -68,7 +56,6 @@ pub fn check_file_exists(file : &str) -> bool {
   }
   return true;
 }
-
 
 /// creates a file
 pub fn create_file(path : &str, success_message: &str) {
@@ -106,28 +93,46 @@ pub fn create_directory(path: &str, success_message: &str) {
   }
 }
 
-/// compresses a file
-pub fn compress_file(input_file : &str, output_file : &str) -> Result<(), std::io::Error> {
-  // Open the input file for reading
-  let input_file = File::open(input_file)?;
-  let reader = BufReader::new(input_file);
-
-  // Open the output file for writing
-  let output_file = File::create(output_file)?;
-  let writer = BufWriter::new(output_file);
-
-  // Create a GzEncoder to compress the data
-  let mut encoder = GzEncoder::new(writer, Compression::default());
-
-  // Copy the data from the reader to the encoder
-  std::io::copy(&mut reader.take(u64::MAX), &mut encoder)?;
-
-  // Finish the encoding process to flush the output
-  encoder.finish()?;
-
+/// flushes a folder
+pub fn flush_folder(folder_path : &str) -> io::Result<()> {
+  fs::remove_dir_all(folder_path)?;
+  fs::create_dir(folder_path)?;
+  fs::File::create("./.avc/tmp/index.bin")?; // currently a placeholder for index replacement
   Ok(())
+}
 
+/// compresses a folder
+pub fn compress_folder(from_folder : &str, to_folder : &str) -> io::Result<()> {
+  let _ = create_directory(to_folder, "");
+  let to_file = format!("{}{}", to_folder, "/commit");
+  
+  let tar_gz = File::create(to_file)?;
+  let enc = GzEncoder::new(tar_gz, Compression::default());
+  let mut tar = Builder::new(enc);
 
+  for entry in WalkDir::new(from_folder) {
+    let entry = entry?;
+    let path = entry.path();
+    let name = path.strip_prefix(entry.path().parent().unwrap()).unwrap();
+    if path.is_file() {
+      tar.append_path_with_name(path, name)?;
+    } else if path.is_dir() {
+      tar.append_dir(name, path)?;
+    }
+  }
+
+  let _ = tar.finish();
+  Ok(())
+}
+
+/// decompress file
+pub fn decompress_file(src_file : &str, dest_folder : &str) -> io::Result<()> {
+  let tar_gz = File::open(src_file)?;
+  let dec = GzDecoder::new(tar_gz);
+  let mut archive = Archive::new(dec);
+
+  archive.unpack(dest_folder)?;
+  Ok(())
 }
 
 #[cfg(test)]
@@ -174,6 +179,41 @@ mod test_macros {
 
   }
 
+  pub fn test_compression() {
+    // tests both file compression and decompression
+    let file_path_1 = "./debug/file_1.txt";
+    let compressed_file = "./debug/file_2.gz";
+    let output_file = "./debug/file_2";
+    match File::create(file_path_1){
+      Ok(mut e) => {
+        let _ = e.write_all(b"hello world");
+      },
+      Err(e) => {
+        panic!("Error when creating file_path_1 : {} ", e);
+      }
+    }
+    let _ = compress_file(&file_path_1, &compressed_file);
+    let _ = decompress_file(&compressed_file, &output_file);
+    let output_path = Path::new(output_file);
+    match fs::read_to_string(output_path) {
+      Ok(e) => {
+        println!("output_content: {} ", e);
+      },
+      Err(e) => {
+        let _ = std::fs::remove_file(file_path_1);
+        let _ = std::fs::remove_file(compressed_file);
+        let _ = std::fs::remove_file(output_file);
+      }
+    }
+
+
+    let _ = std::fs::remove_file(file_path_1);
+    let _ = std::fs::remove_file(compressed_file);
+    let _ = std::fs::remove_file(output_file);
+
+
+
+  }
 
 
 }
